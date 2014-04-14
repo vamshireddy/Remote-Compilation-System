@@ -1,5 +1,6 @@
 Remote_Process_Invocation_POSIX
 ===============================
+( USE SERVER, CLIENT FOLDERS for the latest commits )
 
 Network application in which client can either send the program to execute on the server and get the result back or Client can remotely execute the command on the server and know the result of the command. This is not SSH.
 
