@@ -134,6 +134,7 @@ int main()
 				char program[MAX_PROGRAM_SIZE];
 				int i;
 				char c;
+				/* Create a file for receiveing the program */
 				int file = open("file.c",O_RDWR|O_CREAT,0777);
 				if( file < 0 )
 				{
@@ -151,17 +152,39 @@ int main()
 				}
 				printf("File is recieved\n");
 				close(file);
+				
+				
 				/* Now compile the stored program */
+				
 				int a,status;
 				if( ( a = vfork() ) == 0 )
 				{
 					//CHILD
 					close(pipe_args[0]);
 					dup2(pipe_args[1],1);
-					char* args[2] = {"file.c",NULL};
-					if( execvp("gcc",args) == 0 )
+					if( execlp("gcc","gcc","file.c",NULL) <= 0 )
 					{
 						printf("Error in execvp\n");
+						exit(0);
+					}
+				}
+				wait(a,&status,0);
+				if( status <= 0 )
+				{
+					printf("The status is %d\n",status);
+					exit(0);
+				}
+				printf("The program is compiled now!. Its going to be executed\n\n");
+				sleep(5);
+				/* Now execute the stored program */
+				if( ( a = vfork() ) == 0 )
+				{
+					//CHILD
+					close(pipe_args[0]);
+					dup2(pipe_args[1],1);
+					if( execl("a.out","a.out",NULL) == 0 )
+					{
+						printf("Error in execvp and maybe problem with the compilation\n");
 						exit(0);
 					}
 				}
@@ -171,22 +194,6 @@ int main()
 					printf("The status is %d\n",status);
 					exit(0);
 				}
-				printf("The program is compiled now\n");
-				/* Now execute the stored program */
-				sleep(10);
-				if( ( a = vfork() ) == 0 )
-				{
-					//CHILD
-					close(pipe_args[0]);
-					dup2(pipe_args[1],1);
-					char* args[1] = {NULL};
-					if( execvp("a.out",args) == 0 )
-					{
-						printf("Error in execvp and maybe problem with the compilation\n");
-						exit(0);
-					}
-				}
-				wait(a);
 				close(pipe_args[1]);
 			}
 			// Now rest of the program is to get the contents on pipe and write it to client socket */

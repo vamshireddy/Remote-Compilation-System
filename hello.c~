@@ -1,0 +1,4 @@
+int main()
+{
+	printf("Hey, You have succesfully created a process on the server and executed this C program\n");
+}

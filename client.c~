@@ -92,6 +92,11 @@ int main()
 	char ch;
 	while( read(sock,&ch,1)!=0 )
 	{
+		if( c == '@' )
+		{
+			// To seperate the compilation report with the output 
+			printf("\n");
+		}
 		printf("%c",ch);
 	}
 	printf("DONE EXECUTING THE PROGRAM \n");
