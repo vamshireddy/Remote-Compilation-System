@@ -18,15 +18,18 @@ int main()
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	/* Now create the server structure */
-
 	struct sockaddr_in server;
 
-	printf("Enter the port number : ");
+	char ip[10];
 	int port;
+
+	printf("Enter the IP address to connect : ");
+	scanf("%s",ip);
+	printf("Enter the port number : ");
 	scanf("%d",&port);
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
-	server.sin_addr.s_addr = INADDR_ANY;
+	inet_pton(AF_INET,ip,&server.sin_addr);
 
 	/* Connect using the sever structure */
 
@@ -38,6 +41,7 @@ int main()
 	fflush(stdin);
 	scanf("%s",c);
 	write(sock,&c,1);
+	perror("After write : ");
 	if( c[0] == '0' )
 	{
 		struct command cmd;
@@ -59,6 +63,7 @@ int main()
 		/* Send the stucture to the server */
 		char* byte_pointer = (char*)&cmd;
 		write(sock,byte_pointer,sizeof(struct command));
+		perror("");
 		/* Expecting the output */
 		printf("The command has been sent succesfully \nWaiting for the result\n");		
 	}
