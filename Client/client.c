@@ -1,6 +1,7 @@
 #include<netinet/in.h>
 #include<stdlib.h>
 #include<stdio.h>
+#include<errno.h>
 #include<sys/types.h>
 #include<fcntl.h>
 #define MAX_LENGTH 15
@@ -33,25 +34,32 @@ int main()
 
 	/* Connect using the sever structure */
 
-	connect(sock,(struct sockaddr*)&server,sizeof(server));
+	if( connect(sock,(struct sockaddr*)&server,sizeof(server)) == -1 )
+	{
+		perror("");
+		exit(0);
+	}
 
 	/* Tell, what service you want to server */
 	char c[4];
 	printf("Enter '0' for Command execution, '1' for C Program Compilation and execution \n");
 	fflush(stdin);
 	scanf("%s",c);
+	/* Send the command choice */
 	write(sock,&c,1);
-	perror("After write : ");
+
 	if( c[0] == '0' )
 	{
 		struct command cmd;
-		printf("Enter the command to be executed : ");
+		printf("Enter the command to be executed without arguments : ( Ex. ping, traceroute, man, ls, mkdir ) ");
 		scanf("%s",cmd.command);
-		printf("How many args are there ");
+		printf("How many arguments you want to give for the command typed above : ");
 		scanf("%d",&cmd.no_args);
 		int i=0;
 		
-		printf("Enter the commands one by one\n");
+		printf("Enter the arguments one by one : \n");
+
+		/* This is mandatory for exec at server side */
 		snprintf(cmd.args[0],MAX_LENGTH,"%s","Command-line");
 		cmd.no_args++;
 		
@@ -63,9 +71,8 @@ int main()
 		/* Send the stucture to the server */
 		char* byte_pointer = (char*)&cmd;
 		write(sock,byte_pointer,sizeof(struct command));
-		perror("");
 		/* Expecting the output */
-		printf("The command has been sent succesfully \nWaiting for the result\n");		
+		printf("The command has been sent succesfully \nWaiting for the result\n\n");		
 	}
 	else
 	{
@@ -85,6 +92,7 @@ int main()
 		{
 			if( c == EOF )
 			{
+				printf("eof\n");
 				write(sock,&c,1);
 				break;
 			}
@@ -94,9 +102,27 @@ int main()
 		write(sock,&c,1);
 		printf("The file has been sent succesfully \nWaiting for the result\n");			
 	}
+	// Now read the result obtained from the server 
 	char ch;
-	while( read(sock,&ch,1)!=0 )
+	int a;
+	while( ( a = read(sock,&ch,1)) != 0 )
 	{
+		if( a == -1 )
+		{
+			if( errno == EINTR)
+			{
+				perror("");
+				continue;
+			}
+			else
+			{	perror("");
+				break;
+			}
+		}
+		if( a == '@' )
+		{
+			exit(0);
+		}
 		printf("%c",ch);
 	}
 }

@@ -5,6 +5,8 @@
 #include<sys/types.h>
 #include<sys/wait.h>
 #include<unistd.h>
+#include "vamshi.h"
+#include<string.h>
 
 #define MAX_LENGTH 15
 #define MAX_COMMANDS 10
@@ -22,7 +24,6 @@
 
 // Output should be directed to the client back!
 
-
 struct command_packet
 {
 	/* Command, No of args, args */
@@ -34,10 +35,8 @@ struct command_packet
 int main()
 {
 	/* Create a socket, an endpoint */
-	int sock = socket(AF_INET,SOCK_STREAM,0);
-	
+	int sock = Socket(0);
 	/* This simplifies the error checking */
-	perror("After sock : ");
 
 	/* Create the structre for assigning the IP and Port and pass it to kernel */
 
@@ -51,24 +50,20 @@ int main()
 
 	/* Now, the structure is initalized with all the parameters , Bind it*/
 
-	bind(sock,(struct sockaddr*)&server,sizeof(server));
-
-	perror("After bind :");
+	Bind(sock,(struct sockaddr*)&server,sizeof(server));
 
 	/* Now the socket has a name(port) and device has an IP */
 
 	/* Make the socket as listening socket */
 
-	listen(sock,10);
-
+	Listen(sock,10);
+	printf("Server now Listening at Port %d \n",port);
 	/* Now this socket can accept the connections */
 
 	for( ;; )
 	{
 		// Infinete loop
-		struct sockaddr_in* client = (struct sockaddr_in*) malloc(sizeof(struct sockaddr_in));
-		int len = sizeof(struct sockaddr_in);
-		int client_sock = accept(sock,(struct sockaddr*)&client,&len);
+		int client_sock = Accept(sock,NULL,NULL);
 		// Now the client has been accepted 
 
 		// Serve the client
@@ -89,9 +84,11 @@ int main()
 			
 			/* Create a pipe for communication between the new process and child process */
 			int pipe_args[2];
-			pipe(pipe_args);
-			perror("pipe : ");
-			
+			if( pipe(pipe_args) != 0 )
+			{
+				perror("In Pipe : ");
+				exit(0);
+			}
 			
 			if( type == '0' )
 			{
@@ -106,11 +103,10 @@ int main()
 				/* Now the structure is obtained */
 				/* fork a virtual process */
 				int a,status;
-				if( ( a = vfork() ) == 0 )
+				if( ( a = fork() ) == 0 )
 				{
 					//CHILD
-					close(pipe_args[0]);
-					dup2(pipe_args[1],1);
+					dup2(client_sock,1);
 					char* args[cmd.no_args];
 				/* Since the array of string cmd.args is not a const string 
 					pointer array, we need to convert it*/
@@ -129,7 +125,21 @@ int main()
 					}
 				}
 				wait(&status);
-				close(pipe_args[1]);
+				printf("Exited\n");
+				if(WIFEXITED(status))
+           			{
+           				/* 1 --> Error , 0--> Success*/
+           				if( WEXITSTATUS(status) == 1 )
+           				{
+						
+						char* s ="\n\nThere is error in executing the command \n";
+						printf("%s",s);
+						write(client_sock,s,strlen(s));
+						close(client_sock);
+						close(sock);
+						exit(0);
+					}
+				}
 			}
 			else
 			{
@@ -140,7 +150,7 @@ int main()
 				char c;
 				/* Create a file for receiveing the program */
 				int file = open(FILE_PATH,O_RDWR|O_CREAT,0777);
-				if( file < 0 )
+				if( file == -1 )
 				{
 					printf("File creating error\n");
 					exit(0);
@@ -151,10 +161,9 @@ int main()
 					{
 						break;
 					}
-					printf("%c",c);
 					write(file,&c,1);
 				}
-				printf("File is recieved\n");
+				printf("\nFile is recieved\n");
 				close(file);
 				
 				
@@ -185,12 +194,9 @@ int main()
 						/* Before exiting the process, Write out all the errors
 						accumulated in the pipe to the socket, so that client would know what 
 						error are there in the program */
-				char* error_msg = "\nThe program could not be executed properly\nTHESE ARE THE ERRORS:\n\n"; 
+				char* error_msg = "\nThe program could not be executed properly\n\n"; 
 						write(client_sock,error_msg,strlen(error_msg));
-						while( read(pipe_args[0],&c,1)!=0 )
-						{
-							write(client_sock,&c,1);
-						}
+						printf("Child socket is closed\n");
 						close(client_sock);
 						exit(0);
 					}
@@ -224,8 +230,7 @@ int main()
 				}
 				close(pipe_args[1]);
 			}
-			// Now rest of the program is to get the contents on pipe and write it to client socket */
-			
+			/* Now rest of the program is to get the contents on pipe and write it to client socket */	
 			char c;
 			while( read(pipe_args[0],&c,1)!=0 )
 			{
@@ -243,8 +248,8 @@ int main()
 			close(pipe_args[0]);
 			exit(0);
 		}
-		// Parent
-		/* We dont need the client_sock, it is handled by new process , so close it */
+		/* Parent
+		 We dont need the client_sock, it is handled by new process , so close it */
 		close(client_sock);
 	}
 }
