@@ -14,7 +14,6 @@
 #define EXECUTABLE_FILE_PATH "a.out"
 #define FILE_PATH "file.c"
 
-
 // This is the server where the client's program will be recieved and executed!
 
 // The recieved file should be negotiated before
@@ -196,6 +195,11 @@ int main()
 						error are there in the program */
 				char* error_msg = "\nThe program could not be executed properly\n\n"; 
 						write(client_sock,error_msg,strlen(error_msg));
+						char buffer[200];
+						int a = read(pipe_args[0],buffer,200);
+						printf("%d chars are read from pipe \n",a);
+						a = write(client_sock,buffer,200);
+						printf("%d chars are written to socket \n",a);
 						printf("Child socket is closed\n");
 						close(client_sock);
 						exit(0);
@@ -231,11 +235,9 @@ int main()
 				close(pipe_args[1]);
 			}
 			/* Now rest of the program is to get the contents on pipe and write it to client socket */	
-			char c;
-			while( read(pipe_args[0],&c,1)!=0 )
-			{
-				write(client_sock,&c,1);
-			}
+			char c[200];
+			read(pipe_args[0],&c,200);
+			write(client_sock,&c,200);
 			if( type=='0' )
 			{
 				printf("Command has been executed succesfully\n");

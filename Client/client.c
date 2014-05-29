@@ -6,6 +6,7 @@
 #include<fcntl.h>
 #define MAX_LENGTH 15
 #define MAX_COMMANDS 10
+#define MAX_OUTPUT_LENGTH 500
 
 struct command
 {
@@ -103,26 +104,14 @@ int main()
 		printf("The file has been sent succesfully \nWaiting for the result\n");			
 	}
 	// Now read the result obtained from the server 
-	char ch;
+	char ch[200];
 	int a;
-	while( ( a = read(sock,&ch,1)) != 0 )
+	a = read(sock,&ch,200);
+	printf("Got %d from server\n",a);
+	if( a <=0 )
 	{
-		if( a == -1 )
-		{
-			if( errno == EINTR)
-			{
-				perror("");
-				continue;
-			}
-			else
-			{	perror("");
-				break;
-			}
-		}
-		if( a == '@' )
-		{
-			exit(0);
-		}
-		printf("%c",ch);
+		printf("Error in getting the output\n");
+		exit(0);
 	}
+	printf("The output is %s\n",ch);
 }
