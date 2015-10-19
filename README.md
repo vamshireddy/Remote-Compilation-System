@@ -1,17 +1,13 @@
-Remote_Process_Invocation_POSIX
+Remote Process Invocation on UNIX server.
 ===============================
 
-( USE SERVER, CLIENT FOLDERS for the latest commits )
+( Refer SERVER, CLIENT FOLDERS for the latest commits )
 
-Network application in which client can either send the program to execute on the server and get the result back or Client can remotely execute the command on the server and know the result of the command.
+* An application in which a client can either send the program to execute on the server and can get the results back.
+* Clients can also remotely execute the command on the server and get the results of the command.
+* Server does the processing of the input command and executes the command or compiles the C program.
 
-Server will do the processing of the input command and executes the command or compiles the C program accordingly.
-Server will also execute the compiled C program and send the result back to the client
-
-FILES:
-
-file.c is the file the server is creating to store the incoming C program from the client
-hello.c is the file which the client want to send it to the server to compile
+## Files
+file.c is the file that is created by the server for storing the incoming program that is to be compiled.
+hello.c is the file that is sent by the client to the server.
 a.out is the result of the compilation on the server.
-
-server,client are executable files of the application
